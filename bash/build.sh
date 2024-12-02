@@ -28,12 +28,12 @@ else
     # Download the ZIP file
     curl -L "https://github.com/love2d/love/releases/download/$LOVE_VER/love-$LOVE_VER-win32.zip" --output $LOVE_WIN32_DIR.zip
     # Unzip to a temporary directory
-    unzip $LOVE_WIN32_DIR.zip -d extern/temp_love_win32
+    unzip "${LOVE_WIN32_DIR}.zip" -d "${AMOUR_DIR}/extern/temp_love_win32"
     # Move contents of the extracted folder into the love_win32 directory
     mkdir -p $LOVE_WIN32_DIR
-    mv extern/temp_love_win32/love-$LOVE_VER-win32/* $LOVE_WIN32_DIR
+    mv ${AMOUR_DIR}/extern/temp_love_win32/love-$LOVE_VER-win32/* "${LOVE_WIN32_DIR}/"
     # Clean up temporary files and folders
-    rm -rf $LOVE_WIN32_DIR.zip extern/temp_love_win32
+    rm -rf "${LOVE_WIN32_DIR}.zip" "${AMOUR_DIR}/extern/temp_love_win32"
     echo "love_win32 version $LOVE_VER setup complete"
 fi
 
@@ -61,12 +61,12 @@ else
     # Download the ZIP file
     curl -L "https://github.com/love2d/love/releases/download/$LOVE_VER/love-$LOVE_VER-win64.zip" --output $LOVE_WIN64_DIR.zip
     # Unzip to a temporary directory
-    unzip $LOVE_WIN64_DIR.zip -d extern/temp_love_win64
+    unzip "${LOVE_WIN64_DIR}.zip" -d "${AMOUR_DIR}/extern/temp_love_win64"
     # Move contents of the extracted folder into the love_win64 directory
     mkdir -p $LOVE_WIN64_DIR
-    mv extern/temp_love_win64/love-$LOVE_VER-win64/* $LOVE_WIN64_DIR
+    mv ${AMOUR_DIR}/extern/temp_love_win64/love-$LOVE_VER-win64/* "${LOVE_WIN64_DIR}"
     # Clean up temporary files and folders
-    rm -rf $LOVE_WIN64_DIR.zip extern/temp_love_win64
+    rm -rf "${LOVE_WIN64_DIR}.zip" "${AMOUR_DIR}/extern/temp_love_win64"
     echo "love_win64 version $LOVE_VER setup complete"
 fi
 
@@ -138,7 +138,7 @@ cd ..
 # Create Android APK & AAB
 #--------------------------------------
 
-#source "android-build.sh"
+source "${AMOUR_DIR}/bash/android-build.sh"
 
 
 echo "Build complete!"
