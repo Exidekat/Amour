@@ -82,23 +82,20 @@ rm -rf "${LOVE_ANDROID_DIR}/gradle.properties"
 cp -rf "${AMOUR_DIR}/mobile_tools/gradle.properties" "${LOVE_ANDROID_DIR}/gradle.properties"
 
 # Copy game data into Love Android app assets
-mkdir -p "${LOVE_ANDROID_DIR}/app/src/assets"
-rm -rf "${LOVE_ANDROID_DIR}/app/src/assets/*"
-cp -rf "${BUILD_DIR}/${GAME_NAME}.love" "${LOVE_ANDROID_DIR}/app/src/assets/game.love"
+mkdir -p "${LOVE_ANDROID_DIR}/app/src/embed/assets"
+cp -rf "${GAMEDATA_DIR}/" "${LOVE_ANDROID_DIR}/app/src/embed/assets/"
 
 # Perform clean build
 echo "Starting clean APK build..."
 cd "$LOVE_ANDROID_DIR"
-./gradlew assembleNormal
-#./gradlew assembleEmbedNoRecordRelease
-mv "${LOVE_ANDROID_DIR}/app/build/outputs/apk/normalNoRecord/debug/app-normal-noRecord-debug.apk" "${PROJECT_DIR}/build/${GAME_NAME}.apk"
+./gradlew assembleEmbedRecord
+mv "${LOVE_ANDROID_DIR}/app/build/outputs/apk/embedRecord/debug/app-embed-record-debug.apk" "${PROJECT_DIR}/build/${GAME_NAME}.apk"
 cd "$PROJECT_DIR/build"
-
 
 echo "Starting clean AAB build..."
 cd "$LOVE_ANDROID_DIR"
-#./gradlew clean bundleEmbedNoRecordRelease
-#mv "${LOVE_ANDROID_DIR}/app/build/outputs/bundle/embedNoRecordRelease/app-embed-noRecord-release.aab" "${PROJECT_DIR}/build/${GAME_NAME}.aab"
+./gradlew bundleEmbedRecord
+mv "${LOVE_ANDROID_DIR}/app/build/outputs/bundle/embedRecordDebug/app-embed-record-debug.aab" "${PROJECT_DIR}/build/${GAME_NAME}.aab"
 
 cd $PROJECT_DIR
 
