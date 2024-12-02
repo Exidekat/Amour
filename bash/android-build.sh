@@ -36,11 +36,11 @@ fi
 # Download and set up Android SDK if not already present
 if [ ! -d "$ANDROID_SDK_ROOT" ]; then
     echo "Downloading and setting up Android SDK..."
-    curl -L "https://dl.google.com/android/repository/platform-tools-latest-$(uname | tr '[:upper:]' '[:lower:]').zip" --output "$ANDROID_SDK_ROOT.zip"
-    unzip -q "$ANDROID_SDK_ROOT.zip" -d "$PROJECT_DIR/extern/temp_android_sdk"
     mkdir -p "$ANDROID_SDK_ROOT"
-    mv "$PROJECT_DIR/extern/temp_android_sdk/platform-tools/"* "$ANDROID_SDK_ROOT"
-    rm -rf "$ANDROID_SDK_ROOT.zip" "$PROJECT_DIR/extern/temp_android_sdk"
+    curl -L "https://dl.google.com/android/repository/platform-tools-latest-$(uname | tr '[:upper:]' '[:lower:]').zip" --output "${ANDROID_SDK_ROOT}.zip"
+    unzip -q "$ANDROID_SDK_ROOT.zip" -d "${AMOUR_DIR}/extern/temp_android_sdk"
+    mv "${AMOUR_DIR}/extern/temp_android_sdk/platform-tools/"* "$ANDROID_SDK_ROOT"
+    rm -rf "$ANDROID_SDK_ROOT.zip" "${AMOUR_DIR}/extern/temp_android_sdk"
     echo "Android SDK setup complete."
 else
     echo "Android SDK already exists."
@@ -50,6 +50,7 @@ fi
 CMDLINE_TOOLS_DIR="$ANDROID_SDK_ROOT/cmdline-tools/latest"
 if [ ! -d "$CMDLINE_TOOLS_DIR" ]; then
     echo "Downloading cmdline-tools..."
+    mkdir -p "$ANDROID_SDK_ROOT"
     curl -L "$CMDLINE_TOOLS_URL" --output cmdline-tools.zip
     unzip -q cmdline-tools.zip -d "$ANDROID_SDK_ROOT/cmdline-tools"
     mv "$ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools" "$CMDLINE_TOOLS_DIR"
@@ -64,6 +65,18 @@ if ! yes | "$CMDLINE_TOOLS_DIR/bin/sdkmanager" --licenses; then
     echo "Failed to accept licenses for Android SDK components."
     exit 1
 fi
+
+# Install required Android SDK components
+REQUIRED_COMPONENTS=("ndk;${ANDROID_NDK_VER}")
+
+for component in "${REQUIRED_COMPONENTS[@]}"; do
+    echo "Ensuring $component is installed..."
+    if ! "$CMDLINE_TOOLS_DIR/bin/sdkmanager" "$component"; then
+        echo "Error installing $component. Retrying..."
+        "$CMDLINE_TOOLS_DIR/bin/sdkmanager" --update
+        "$CMDLINE_TOOLS_DIR/bin/sdkmanager" "$component"
+    fi
+done
 
 # Download and set up love_android if not already present
 if [ ! -d "$LOVE_ANDROID_DIR" ]; then

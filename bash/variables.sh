@@ -25,16 +25,20 @@ LOVE_WIN64_DIR="${AMOUR_DIR}/extern/love_${LOVE_VER}_win64"
 LOVE_MACOS_DIR="${AMOUR_DIR}/extern/love_${LOVE_VER}_macos"
 LOVE_ANDROID_DIR="${AMOUR_DIR}/extern/love_android"
 
-# Directories for SDK and JDK
-#ANDROID_SDK_ROOT="$PROJECT_DIR/extern/android_sdk"
-ANDROID_SDK_ROOT="$HOME/Library/Android/sdk"
+# Directories for SDK, NDK, and JDK
+ANDROID_SDK_ROOT="${HOME}/Library/Android/sdk"
+#ANDROID_NDK_ROOT="${HOME}/Library/Android/sdk/ndk/28.0.12674087"
+
+#ANDROID_SDK_ROOT="${AMOUR_DIR}/extern/Android/sdk"
+ANDROID_NDK_VER="28.0.12674087"
+ANDROID_NDK_ROOT="${AMOUR_DIR}/extern/Android/sdk/ndk/${ANDROID_NDK_VER}"
 
 JAVA_VERSION="17"
 JAVA_DIR="${AMOUR_DIR}/extern/java_jdk"
 
 # More Environment variables
-export ANDROID_HOME="/Users/exide/Library/Android/sdk"
-export ANDROID_NDK_HOME="/Users/exide/Library/Android/sdk/ndk/28.0.12674087"
+export ANDROID_HOME=${ANDROID_SDK_ROOT}
+export ANDROID_NDK_HOME=${ANDROID_NDK_ROOT}
 export JAVA_HOME="$JAVA_DIR/Contents/Home"
 export PATH="$JAVA_HOME/bin:$ANDROID_HOME/platform-tools:$PATH"
 
