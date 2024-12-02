@@ -3,9 +3,13 @@ AMOUR: A collection of build tools to automate platform distributions for LÖVE 
 
 ## Installation
 
-AMOUR can be installed as a gitsubmodule in your existing LOVE project:
+AMOUR can be installed as a git submodule in your existing LOVE project:
 
-`git submodule add https://github.com/Exidekat/Amour.git`
+`$ git submodule add https://github.com/Exidekat/Amour.git`
+
+Or if your project is not a git repository, a resursive clone will suffice:
+
+`$ git clone --recurse-submodules https://github.com/Exidekat/Amour.git`
 
 AMOUR expects your LOVE files to be in an adjacent "gamedata" directory.
 Finished distributions will appear in the adjacent 'build' directory.

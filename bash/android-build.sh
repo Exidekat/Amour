@@ -36,11 +36,11 @@ fi
 # Download and set up Android SDK if not already present
 if [ ! -d "$ANDROID_SDK_ROOT" ]; then
     echo "Downloading and setting up Android SDK..."
-    curl -L "https://dl.google.com/android/repository/platform-tools-latest-$(uname | tr '[:upper:]' '[:lower:]').zip" --output "$ANDROID_SDK_ROOT.zip"
-    unzip -q "$ANDROID_SDK_ROOT.zip" -d "$PROJECT_DIR/extern/temp_android_sdk"
     mkdir -p "$ANDROID_SDK_ROOT"
-    mv "$PROJECT_DIR/extern/temp_android_sdk/platform-tools/"* "$ANDROID_SDK_ROOT"
-    rm -rf "$ANDROID_SDK_ROOT.zip" "$PROJECT_DIR/extern/temp_android_sdk"
+    curl -L "https://dl.google.com/android/repository/platform-tools-latest-$(uname | tr '[:upper:]' '[:lower:]').zip" --output "${ANDROID_SDK_ROOT}.zip"
+    unzip -q "$ANDROID_SDK_ROOT.zip" -d "${AMOUR_DIR}/extern/temp_android_sdk"
+    mv "${AMOUR_DIR}/extern/temp_android_sdk/platform-tools/"* "$ANDROID_SDK_ROOT"
+    rm -rf "$ANDROID_SDK_ROOT.zip" "${AMOUR_DIR}/extern/temp_android_sdk"
     echo "Android SDK setup complete."
 else
     echo "Android SDK already exists."
@@ -50,6 +50,7 @@ fi
 CMDLINE_TOOLS_DIR="$ANDROID_SDK_ROOT/cmdline-tools/latest"
 if [ ! -d "$CMDLINE_TOOLS_DIR" ]; then
     echo "Downloading cmdline-tools..."
+    mkdir -p "$ANDROID_SDK_ROOT"
     curl -L "$CMDLINE_TOOLS_URL" --output cmdline-tools.zip
     unzip -q cmdline-tools.zip -d "$ANDROID_SDK_ROOT/cmdline-tools"
     mv "$ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools" "$CMDLINE_TOOLS_DIR"
@@ -64,6 +65,18 @@ if ! yes | "$CMDLINE_TOOLS_DIR/bin/sdkmanager" --licenses; then
     echo "Failed to accept licenses for Android SDK components."
     exit 1
 fi
+
+# Install required Android SDK components
+REQUIRED_COMPONENTS=("ndk;${ANDROID_NDK_VER}")
+
+for component in "${REQUIRED_COMPONENTS[@]}"; do
+    echo "Ensuring $component is installed..."
+    if ! "$CMDLINE_TOOLS_DIR/bin/sdkmanager" "$component"; then
+        echo "Error installing $component. Retrying..."
+        "$CMDLINE_TOOLS_DIR/bin/sdkmanager" --update
+        "$CMDLINE_TOOLS_DIR/bin/sdkmanager" "$component"
+    fi
+done
 
 # Download and set up love_android if not already present
 if [ ! -d "$LOVE_ANDROID_DIR" ]; then
@@ -82,23 +95,20 @@ rm -rf "${LOVE_ANDROID_DIR}/gradle.properties"
 cp -rf "${AMOUR_DIR}/mobile_tools/gradle.properties" "${LOVE_ANDROID_DIR}/gradle.properties"
 
 # Copy game data into Love Android app assets
-mkdir -p "${LOVE_ANDROID_DIR}/app/src/assets"
-rm -rf "${LOVE_ANDROID_DIR}/app/src/assets/*"
-cp -rf "${BUILD_DIR}/${GAME_NAME}.love" "${LOVE_ANDROID_DIR}/app/src/assets/game.love"
+mkdir -p "${LOVE_ANDROID_DIR}/app/src/embed/assets"
+cp -rf "${GAMEDATA_DIR}/" "${LOVE_ANDROID_DIR}/app/src/embed/assets/"
 
 # Perform clean build
 echo "Starting clean APK build..."
 cd "$LOVE_ANDROID_DIR"
-./gradlew assembleNormal
-#./gradlew assembleEmbedNoRecordRelease
-mv "${LOVE_ANDROID_DIR}/app/build/outputs/apk/normalNoRecord/debug/app-normal-noRecord-debug.apk" "${PROJECT_DIR}/build/${GAME_NAME}.apk"
+./gradlew assembleEmbedRecord
+mv "${LOVE_ANDROID_DIR}/app/build/outputs/apk/embedRecord/debug/app-embed-record-debug.apk" "${PROJECT_DIR}/build/${GAME_NAME}.apk"
 cd "$PROJECT_DIR/build"
-
 
 echo "Starting clean AAB build..."
 cd "$LOVE_ANDROID_DIR"
-#./gradlew clean bundleEmbedNoRecordRelease
-#mv "${LOVE_ANDROID_DIR}/app/build/outputs/bundle/embedNoRecordRelease/app-embed-noRecord-release.aab" "${PROJECT_DIR}/build/${GAME_NAME}.aab"
+./gradlew bundleEmbedRecord
+mv "${LOVE_ANDROID_DIR}/app/build/outputs/bundle/embedRecordDebug/app-embed-record-debug.aab" "${PROJECT_DIR}/build/${GAME_NAME}.aab"
 
 cd $PROJECT_DIR
 
