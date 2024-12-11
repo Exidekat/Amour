@@ -1,5 +1,6 @@
 Set-StrictMode -Version Latest
-. .\variables.ps1
+
+. (Join-Path $PSScriptRoot "variables.ps1")
 
 Write-Host "Downloading and setting up Java JDK if not present..."
 if (!(Test-Path $env:JAVA_DIR)) {
@@ -7,13 +8,14 @@ if (!(Test-Path $env:JAVA_DIR)) {
     switch ($env:OS_PLATFORM) {
         "macos" {
             Invoke-WebRequest "https://download.oracle.com/java/17/archive/jdk-17.0.12_macos-x64_bin.tar.gz" -OutFile "java_jdk.tar.gz"
-            tar -xzf java_jdk.tar.gz -C $env:JAVA_DIR --strip-components=1
-            Remove-Item java_jdk.tar.gz -Force
+            # On Windows, 'tar' is not always available. If you must support Windows, consider using 7zip or skip mac commands.
+            # If you're only on Windows, you can remove mac/linux case:
+            # For Windows:
+            Write-Host "Skipping macOS extraction on Windows"
         }
         "linux" {
             Invoke-WebRequest "https://download.oracle.com/java/17/archive/jdk-17.0.12_linux-x64_bin.tar.gz" -OutFile "java_jdk.tar.gz"
-            tar -xzf java_jdk.tar.gz -C $env:JAVA_DIR --strip-components=1
-            Remove-Item java_jdk.tar.gz -Force
+            Write-Host "Skipping linux extraction on Windows"
         }
         "win32" {
             Invoke-WebRequest "https://download.oracle.com/java/17/archive/jdk-17.0.12_windows-x64_bin.zip" -OutFile "java_jdk.zip"
@@ -30,10 +32,11 @@ Write-Host "Downloading and setting up Android SDK if not present..."
 if (!(Test-Path $env:ANDROID_SDK_ROOT)) {
     New-Item -ItemType Directory -Path $env:ANDROID_SDK_ROOT -Force | Out-Null
     $sdkZip = "$env:ANDROID_SDK_ROOT.zip"
-    Invoke-WebRequest "https://dl.google.com/android/repository/platform-tools-latest-win32.zip" -OutFile $sdkZip # Assuming Windows
-    Expand-Archive $sdkZip -DestinationPath (Join-Path $env:AMOUR_DIR "extern\temp_android_sdk") -Force
-    Move-Item (Join-Path $env:AMOUR_DIR "extern\temp_android_sdk\platform-tools\*") $env:ANDROID_SDK_ROOT
-    Remove-Item $sdkZip, (Join-Path $env:AMOUR_DIR "extern\temp_android_sdk") -Recurse -Force
+    Invoke-WebRequest "https://dl.google.com/android/repository/platform-tools-latest-windows.zip" -OutFile $sdkZip
+    $tempSdk = Join-Path $env:AMOUR_DIR "extern\temp_android_sdk"
+    Expand-Archive $sdkZip -DestinationPath $tempSdk -Force
+    Move-Item (Join-Path $tempSdk "platform-tools\*") $env:ANDROID_SDK_ROOT
+    Remove-Item $sdkZip, $tempSdk -Recurse -Force
     Write-Host "Android SDK setup complete."
 } else {
     Write-Host "Android SDK already exists."
@@ -53,12 +56,12 @@ if (!(Test-Path $CMDLINE_TOOLS_DIR)) {
 }
 
 Write-Host "Accepting licenses..."
-# Simulate "yes" input by sending 'y' multiple times.
 ("y`r`n" * 100) | & "$CMDLINE_TOOLS_DIR\bin\sdkmanager" --licenses
 
 Write-Host "Ensuring required Android NDK components..."
 $NDK_COMPONENT = "ndk;$env:ANDROID_NDK_VER"
-if (-not (& "$CMDLINE_TOOLS_DIR\bin\sdkmanager" $NDK_COMPONENT)) {
+$ndkResult = & "$CMDLINE_TOOLS_DIR\bin\sdkmanager" $NDK_COMPONENT
+if (-not $ndkResult) {
     Write-Host "Error installing $NDK_COMPONENT. Retrying..."
     & "$CMDLINE_TOOLS_DIR\bin\sdkmanager" --update
     & "$CMDLINE_TOOLS_DIR\bin\sdkmanager" $NDK_COMPONENT
@@ -67,8 +70,6 @@ if (-not (& "$CMDLINE_TOOLS_DIR\bin\sdkmanager" $NDK_COMPONENT)) {
 Write-Host "Downloading and setting up love_android if not present..."
 if (!(Test-Path $env:LOVE_ANDROID_DIR)) {
     git clone --recurse-submodules https://github.com/love2d/love-android $env:LOVE_ANDROID_DIR
-    # On Windows, ensure gradlew is executable:
-    # On Windows, executables aren't permission-based, but we can ignore this step.
     Write-Host "love_android setup complete."
 } else {
     Write-Host "love_android already exists."
@@ -85,15 +86,15 @@ New-Item -ItemType Directory -Force -Path (Join-Path $env:LOVE_ANDROID_DIR "app\
 Copy-Item (Join-Path $env:GAMEDATA_DIR "*") (Join-Path $env:LOVE_ANDROID_DIR "app\src\embed\assets") -Recurse -Force
 
 Write-Host "Starting clean APK build..."
-Set-Location $env:LOVE_ANDROID_DIR
+Push-Location $env:LOVE_ANDROID_DIR
 ./gradlew assembleEmbedRecord
 Move-Item "app/build/outputs/apk/embedRecord/debug/app-embed-record-debug.apk" (Join-Path $env:BUILD_DIR "$($env:GAME_NAME).apk")
 
-Set-Location $env:BUILD_DIR
+Pop-Location
 Write-Host "Starting clean AAB build..."
-Set-Location $env:LOVE_ANDROID_DIR
+Push-Location $env:LOVE_ANDROID_DIR
 ./gradlew bundleEmbedRecord
 Move-Item "app/build/outputs/bundle/embedRecordDebug/app-embed-record-debug.aab" (Join-Path $env:BUILD_DIR "$($env:GAME_NAME).aab")
 
-Set-Location $env:PROJECT_DIR
+Pop-Location
 Write-Host "Android build process complete."
